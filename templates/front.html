@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+    
+    <div class="row">
+        <div class="sub-work col-md-12">
+            {% if nopost %}
+                <h2>Hola! You are @BloggerSpace</h2>
+            {% else %}
+                <h2>Welcome {{username}}!</h2>
+            {% endif %}
+            {% if deleted_post_id %}
+                <div class="alert alert-success" role="alert">
+                    <span class="glyphicon glyphicon-success" aria-hidden="true"></span>
+                    Post deleted successully
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if posts.count() == 0 %}
+        {% if nopost %}
+                <h4>Oops! Seems like a lonely space :(</h4>
+        {% else %}
+                <h4>Anything on your mind? Shoot!</h4>
+        {% endif %}
+    {% else %}
+        {% for p in posts %}
+            {% if p.key().id()|string != deleted_post_id %}
+                <div class="row">
+                    <div class="post col-md-12 wow fadeInRight"
+                         data-wow-duration="1000ms" data-wow-delay="300ms">
+            
+                        <div class="row">
+                            <div class="col-md-7">
+                                <h3 class="post-heading">
+                                    <a href="/blog/{{username}}/{{p.key().id()}}" class="post-title">{{p.subject}}</a>
+                                </h3>
+                            </div>
+                        </div>
+
+                        <small class="post-date">(Posted on {{p.created.strftime("%b %d, %Y")}} by {{p.user_id}}</small>
+            
+                        <p class="post-content">{{p.content.replace('\n', '<br>') | safe}}</p>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+{% endblock %}
