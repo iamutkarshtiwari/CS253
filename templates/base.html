@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link type="text/css" rel="stylesheet" href="/static/main.css" />
+  <title>{{username}}'s Blog</title>
+</head>
+
+<body>
+	<div style="text-align:center">
+	  <h1><a href="/blog" class="main-title" align="center">
+	    {{username}}'s Blog
+	  </a></h1>
+	 
+	</div>
+
+  <div id="content">
+    {% block content %}
+    {% endblock %}
+  </div>
+</body>
+</html>

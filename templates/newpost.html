@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <style type="text/css">
+    hr {
+      width: 80%;
+    }
+    .error {
+      color: red;
+    }
+    label {
+      display: block;
+      font-size: 20px;
+    }
+    input[type=text] {
+      width: 400px;
+      font-size: 20px;
+      padding: 2px;
+    }
+    textarea {
+      width: 50%;
+      height: 200px;
+      font-size: 17px;
+      font-family: monospace;
+      /*border: 0px;*/
+      width: calc(100% -10px);
+      padding: 5px; 
+    }
+    input[type=submit] {
+      font-size: 24px;
+    }
+    hr {
+      margin: 20px auto;
+    }
+    .art + .art {
+      margin-top: 20px;
+    }
+    .art-title {
+      font-weight: bold;
+    }
+    .art-body {
+      margin: 0;
+      font-size: 17px;
+    }
+    
+  </style>
+  <body>
+    <h3 align="center">New Post</h3>
+
+    <form align="center" method="post">
+      <label>
+        <div >Subject</div>
+        <input type="text" name="subject" value="{{ subject }}">
+      </label>
+      <br>
+      <label>
+        <div>Blog</div>
+        <div id="contentarea"><textarea name="content">{{ content }}</textarea><div>
+      </label>
+
+      <div class="error">
+      {{ error }}
+      </div>
+
+      <input type="submit">
+    </form>
+    
+    <hr>
+    {% endblock %}
+<!-- 
+    {% for art in arts %}
+    <div class="art">
+      <div class="art-title">
+        {{ art.title }}
+      </div>
+      <pre class="art-body">{{ art.art }}</pre>
+    </div>
+    {% endfor %} -->
+  </body>
+</html>

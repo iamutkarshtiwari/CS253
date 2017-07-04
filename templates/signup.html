@@ -1,0 +1,26 @@
+<h1>SignUp</h1>
+  <form id="signup" name="signup" method="post" action="/signup">
+  <label for="username">Username</label>
+  <input class="text username" name="username" type="text" value="{{username}}" /><div>{{username_error}}</div><br>
+  <label for="email">Password</label>
+  <input class="text" name="pass" type="password" /><div>{{password_error}}</div><br>
+  <label for="email">Verify Password</label>
+  <input class="text" name="verify_pass" type="password" /><div>{{password_match_error}}</div><br>
+  <label for="email">Email Address</label>
+  <input class="text" name="email" type="text" /><div>{{email_error}}</div><br>
+  <input class="btn" type="submit" value="Sign Up" />
+</form>
+
+<style>
+label {
+    width:180px;
+    clear:left;
+    text-align:right;
+    padding-right:10px;
+}
+
+input, label {
+    float:left;
+}
+
+</style>
