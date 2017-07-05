@@ -4,10 +4,12 @@
     
     <div class="row">
         <div class="sub-work col-md-12">
-            {% if nopost %}
+            {% if front %}
                 <h2>Hola! You are @BloggerSpace</h2>
+            {% elif profile != username %}
+                <h2>{{profile}}'s Wall</h2>
             {% else %}
-                <h2>Welcome {{username}}!</h2>
+                <h2>Hi! {{username}}</h2>
             {% endif %}
             {% if deleted_post_id %}
                 <div class="alert alert-success" role="alert">
@@ -34,14 +36,14 @@
                         <div class="row">
                             <div class="col-md-7">
                                 <h3 class="post-heading">
-                                    <a href="/blog/{{username}}/{{p.key().id()}}" class="post-title">{{p.subject}}</a>
+                                    <a href="/blog/{{p.user_id}}/{{p.key().id()}}" class="post-title">{{p.subject}}</a>
                                 </h3>
                             </div>
                         </div>
 
-                        <small class="post-date">(Posted on {{p.created.strftime("%b %d, %Y")}} by {{p.user_id}}</small>
+                        <small class="post-date">(Posted on {{p.created.strftime("%b %d, %Y")}} by <a href="/blog/{{p.user_id}}">{{p.user_id}}</a>)</small>
             
-                        <p class="post-content">{{p.content.replace('\n', '<br>') | safe}}</p>
+                        <p class="post-content">{{p.content|replace("\n", "<br>")|safe}}</p>
                     </div>
                 </div>
             {% endif %}

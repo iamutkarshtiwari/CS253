@@ -11,8 +11,8 @@
             {% endif %}
         </div>
         <div class="col-md-5">
-            <a id="post-delete" class="btn btn-danger pull-right" href="/blog/{{username}}/deletepost/{{post.key().id()}}">Delete</a>
-            <a id="post-edit" class="btn btn-primary pull-right" href="/blog/{{username}}/editpost/{{post.key().id()}}">Edit</a>
+            <a id="post-delete" class="btn btn-danger pull-right" href="/blog/{{post.user_id}}/deletepost/{{post.key().id()}}">Delete</a>
+            <a id="post-edit" class="btn btn-primary pull-right" href="/blog/{{post.user_id}}/editpost/{{post.key().id()}}">Edit</a>
         </div>
 
         <div class="row">
@@ -23,9 +23,9 @@
         </div>
     </div>
 
-    <small class="post-date">(Posted on {{post.created.strftime("%b %d, %Y")}} by {{post.user_id}})</small>
+    <small class="post-date">(Posted on {{post.created.strftime("%b %d, %Y")}} by <a href="/blog/{{post.user_id}}">{{post.user_id}}</a>)</small>
     
-    <p class="post-content">{{post.content | safe}}</p>
+    <p class="post-content">{{post.content|replace("\n", "<br>")|safe}}</p>
     </div>
 {% endblock %}
 
