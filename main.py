@@ -102,27 +102,12 @@ class BlogHandler(webapp2.RequestHandler):
 class MainPage(BlogHandler):
 
     def get(self):
-        #     # self.response.write(render_str('main.html'))
-        #     visits = 0
-        #     visits_cookie_str = self.request.cookies.get('visits')
-        #     if visits_cookie_str:
-        #         cookie_val = check_secure_val(visits_cookie_str)
-        #         if (cookie_val):
-        #             visits = int(cookie_val)
-        #     visits += 1
-
-        #     new_cookie_val = make_secure_val(str(visits))
-
-        #     self.response.headers.add_header(
-        #         'Set-Cookie', "visits=%s" % new_cookie_val)
-        #     self.response.write("You have been here %s times" % str(visits))
-        self.render('home.html')
+        # self.render('home.html')
+        self.redirect('/blog')
 
     def post(self):
         input_text = self.request.get('text')
         input_text = input_text.encode('rot13')
-
-        # self.response.out.write(render_str('main.html', text=input_text))
 
 
 class Login(BlogHandler):
