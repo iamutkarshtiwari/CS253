@@ -29,13 +29,16 @@ class User(db.Model):
     @classmethod
     def by_id(self, uid):
         """
-            This method fetchs List of User objects from database,
-            whose name is {name}.
+            This method fetches the User objects 
+            from database based on object id.
         """
         return User.get_by_id(uid)
 
     @classmethod
     def by_user_id(self, username):
+        """
+            Returns the User object that matches the username.
+        """
         return User.all().filter('user_id = ', username).get()
 
     @classmethod

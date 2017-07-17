@@ -5,6 +5,7 @@ import re
 import hmac
 
 from google.appengine.ext import db
+from google.appengine.api import memcache
 
 from user import User
 from post import Post
@@ -188,11 +189,24 @@ class SignUp(BlogHandler):
         if is_error:
             self.render('signup-form.html', **params)
         else:
-            u = User.register(username, password, email)
-            u.put()
 
-            self.login(u)
-            self.redirect('/blog/%s' % username)
+            # Memcache to prevent registration clash with same username
+            if (memcache.get(username) is None):
+                memcache.set(key=username, value=1)
+
+                # Database registration
+                u = User.register(username, password, email)
+                u.put()
+
+                # Clear memcache
+                memcache.delete(username)
+
+                self.login(u)
+                self.redirect('/blog/%s' % username)
+            else:
+                params['error_username'] = "This username already exists"
+                params['username'] = ""
+                self.render('signup-form.html', **params)
 
 
 class NewPost(BlogHandler):
@@ -320,7 +334,7 @@ class BlogHome(BlogHandler):
 
 
 app = webapp2.WSGIApplication([
-    ('/', MainPage),
+    ('/?', MainPage),
     ('/login', Login),
     ('/signup', SignUp),
     ('/logout', Logout),
