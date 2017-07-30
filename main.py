@@ -2,13 +2,14 @@ import webapp2
 import jinja2
 import os
 import re
+import time
 import hmac
 
 from google.appengine.ext import db
 from google.appengine.api import memcache
 
 from user import User
-from post import Post
+from post import Post, Like, Comment
 
 # For cookie hashing
 secret = 'super_secured'
@@ -95,7 +96,7 @@ class BlogHandler(webapp2.RequestHandler):
         webapp2.RequestHandler.initialize(self, *a, **kw)
         uid = self.read_secure_cookie('user_id')
         if (uid and User.by_id(int(uid))):
-            self.user = User.by_id(int(uid)).user_id
+            self.user = str(User.by_id(int(uid)).user_id)
         else:
             self.user = None
 
@@ -103,12 +104,7 @@ class BlogHandler(webapp2.RequestHandler):
 class MainPage(BlogHandler):
 
     def get(self):
-        # self.render('home.html')
         self.redirect('/blog')
-
-    def post(self):
-        input_text = self.request.get('text')
-        input_text = input_text.encode('rot13')
 
 
 class Login(BlogHandler):
@@ -126,7 +122,7 @@ class Login(BlogHandler):
         u = User.login(username, password)
         if u:
             self.login(u)
-            self.redirect('/blog/%s' % username)
+            self.redirect('/blog/profile/%s' % username)
         else:
             msg = 'Invalid login'
             self.render('login-form.html', error=msg)
@@ -144,7 +140,7 @@ class SignUp(BlogHandler):
     def get(self):
         # Redirect if logged in
         if self.user:
-            self.redirect("/blog/%s" % self.user)
+            self.redirect("/blog/profile/%s" % self.user)
         else:
             self.render('signup-form.html')
 
@@ -190,7 +186,7 @@ class SignUp(BlogHandler):
             self.render('signup-form.html', **params)
         else:
 
-            # Memcache to prevent registration clash with same username
+            # Used Memcached to prevent registration clash with same username
             if (memcache.get(username) is None):
                 memcache.set(key=username, value=1)
 
@@ -202,7 +198,7 @@ class SignUp(BlogHandler):
                 memcache.delete(username)
 
                 self.login(u)
-                self.redirect('/blog/%s' % username)
+                self.redirect('/blog/profile/%s' % username)
             else:
                 params['error_username'] = "This username already exists"
                 params['username'] = ""
@@ -211,26 +207,34 @@ class SignUp(BlogHandler):
 
 class NewPost(BlogHandler):
 
-    def get(self, user_id):
-        self.render('newpost.html')
-
-    def post(self, user_id):
-        subject = self.request.get('subject')
-        content = self.request.get('content')
-        if not (subject and content):
-            self.render('newpost.html',
-                        subject=subject, content=content, error="Subject and content, please!")
+    def get(self):
+        if self.user:
+            self.render("newpost.html")
         else:
-            postdata = Post(user_id=user_id,
-                            subject=subject, content=content)
-            postdata.put()
-            self.redirect("/blog/%s/%s" %
-                          (self.user, str(postdata.key().id())))
+            self.redirect("/login?error=You need to be logged, in order" +
+                          " to create a post!")
+
+    def post(self):
+        if self.user:
+            subject = self.request.get('subject')
+            content = self.request.get('content')
+            if not (subject and content):
+                self.render('newpost.html',
+                            subject=subject, content=content, error="Subject and content, please!")
+            else:
+                postdata = Post(user_id=self.user,
+                                subject=subject, content=content)
+                postdata.put()
+                self.redirect("/blog/%s" %
+                              str(postdata.key().id()))
+        else:
+            self.redirect("/login?error=You need to be logged, in order" +
+                          " to create a post!")
 
 
 class DeletePost(BlogHandler):
 
-    def get(self, user_id, post_id):
+    def get(self, post_id):
         key = db.Key.from_path('Post', int(post_id))
         post = db.get(key)
         if post:
@@ -241,7 +245,7 @@ class DeletePost(BlogHandler):
                     post.delete()
                     self.redirect("/blog?deleted_post_id=" + post_id)
                 else:
-                    self.redirect("/blog/" + post.user_id + "/" + post_id + "?error=You don't have " +
+                    self.redirect("/blog/" + post_id + "?error=You don't have " +
                                   "access to delete this record.")
             else:
                 self.redirect("/login?error=You need to be logged, in order" +
@@ -252,18 +256,16 @@ class DeletePost(BlogHandler):
 
 class EditPost(BlogHandler):
 
-    def get(self, user_id, post_id):
+    def get(self, post_id):
         key = db.Key.from_path('Post', int(post_id))
         post = db.get(key)
         if post:
             if self.user:
-                key = db.Key.from_path('Post', int(post_id))
-                post = db.get(key)
                 if post.user_id == self.user:
                     self.render('editpost.html', subject=post.subject,
                                 content=post.content)
                 else:
-                    self.redirect("/blog/" + post.user_id + "/" + post_id + "?error=You don't have " +
+                    self.redirect("/blog/" + post_id + "?error=You don't have " +
                                   "access to edit this post.")
             else:
                 self.redirect("/login?error=You need to be logged, in order" +
@@ -271,7 +273,7 @@ class EditPost(BlogHandler):
         else:
             self.render("404.html")
 
-    def post(self, user_id, post_id):
+    def post(self, post_id):
         key = db.Key.from_path('Post', int(post_id))
         post = db.get(key)
         if post:
@@ -282,18 +284,77 @@ class EditPost(BlogHandler):
                 subject = self.request.get('subject')
                 content = self.request.get('content')
                 if subject and content:
-                    key = db.Key.from_path('Post', int(post_id))
+                    key = db.Key.from_path(
+                        'Post', int(post_id))
                     post = db.get(key)
                     post.subject = subject
                     post.content = content
                     post.put()
-                    self.redirect("/blog/" + post.user_id + "/" + post_id)
+                    self.redirect("/blog/" + post_id)
                 else:
                     msg = "Subject and content please!"
                     self.render('editpost.html', error=msg,
                                 subject=subject, content=content)
         else:
             self.render("404.html")
+
+
+class DeleteComment(BlogHandler):
+
+    def get(self, post_id, comment_id):
+        if self.user:
+            key = db.Key.from_path('Comment', int(
+                comment_id))
+            c = db.get(key)
+            if c.user_id == self.user:
+                c.delete()
+                time.sleep(0.1)
+                self.redirect("/blog/" + post_id + "?deleted_comment_id=" +
+                              comment_id)
+            else:
+                self.redirect("/blog/" + post_id + "?error=You don't have " +
+                              "access to delete this comment.")
+        else:
+            self.redirect("/login?error=You need to be logged, in order to " +
+                          "delete your comment!!")
+
+
+class EditComment(BlogHandler):
+
+    def get(self, post_id, comment_id):
+
+        if self.user:
+            key = db.Key.from_path('Comment', int(
+                comment_id))
+            c = db.get(key)
+            if (c.user_id == self.user):
+                self.render("editcomment.html", comment=c.comment)
+
+            else:
+                self.redirect("/blog/" + post_id + "?error=You don't have " +
+                              "access to edit this comment.")
+
+        else:
+            self.redirect("/login?error=You need to be logged, in order to " +
+                          "edit your comment!!")
+
+    def post(self, post_id, comment_id):
+        if not self.user:
+            self.redirect('/blog')
+
+        new_comment = self.request.get("comment")
+
+        if new_comment:
+            key = db.Key.from_path('Comment',
+                                   int(comment_id))
+            c = db.get(key)
+            c.comment = new_comment
+            c.put()
+            time.sleep(0.1)
+            self.redirect('/blog/%s' % post_id)
+        else:
+            error = "No blank comments, please!"
+            self.render("editcomment.html", error=error)
 
 
 class Profile(BlogHandler):
@@ -310,14 +371,62 @@ class Profile(BlogHandler):
 
 class PostPage(BlogHandler):
 
-    def get(self, user_id, post_id):
+    def get(self, post_id):
         key = db.Key.from_path('Post', int(post_id))
         post = db.get(key)
+        likes = db.GqlQuery(
+            "select * from Like where post_id = '%s'" % post_id)
+        comments = db.GqlQuery(
+            "select * from Comment where post_id = '%s' order by created desc" % post_id)
+
         if post:
             error = self.request.get('error')
-            self.render('postpage.html', post=post, error=error)
+            self.render('postpage.html', post=post,
+                        error=error, noOfLikes=likes.count(), comments=comments)
         else:
             self.render("404.html")
+
+    def post(self, post_id):
+        key = db.Key.from_path('Post', int(post_id))
+        post = db.get(key)
+        comment = self.request.get('comment')
+        like = self.request.get('like')
+
+        if (self.user):
+            # Adds comment
+            if (comment != ""):
+                c = Comment(user_id=self.user,
+                            post_id=post_id,
+                            comment=comment)
+                c.put()
+
+            # Adds like
+            if(like and like == "update"):
+                likes = db.GqlQuery(
+                    "select * from Like where post_id = '%s' and user_id = '%s'" % (post_id, self.user))
+
+                if self.user == post.user_id:
+                    self.redirect("/blog/" + post_id +
+                                  "?error=You cannot like your " +
+                                  "post.!!")
+                    return
+                elif likes.count() == 0:
+                    l = Like(user_id=self.user,
+                             post_id=post_id)
+                    l.put()
+
+        else:
+            self.redirect("/login?error=You need to login before " +
+                          "performing edit, like or commenting.!!")
+            return
+
+        time.sleep(0.1)
+        likes = db.GqlQuery(
+            "select * from Like where post_id = '%s'" % post_id)
+        comments = db.GqlQuery(
+            "select * from Comment where post_id = '%s' order by created desc" % post_id)
+        self.render("postpage.html", post=post,
+                    comments=comments, noOfLikes=likes.count())
 
 
 class BlogHome(BlogHandler):
@@ -339,9 +448,11 @@ app = webapp2.WSGIApplication([
     ('/signup', SignUp),
     ('/logout', Logout),
     ('/blog', BlogHome),
-    ('/blog/([a-zA-Z0-9_.-]+)', Profile),
-    ('/blog/([a-zA-Z0-9_.-]+)/([0-9]+)', PostPage),
-    ('/blog/([a-zA-Z0-9_.-]+)/newpost', NewPost),
-    ('/blog/([a-zA-Z0-9_.-]+)/editpost/([0-9]+)', EditPost),
-    ('/blog/([a-zA-Z0-9_.-]+)/deletepost/([0-9]+)', DeletePost)
+    ('/blog/([0-9]+)', PostPage),
+    ('/blog/profile/([a-zA-Z0-9_.-]+)', Profile),
+    ('/blog/newpost', NewPost),
+    ('/blog/editpost/([0-9]+)', EditPost),
+    ('/blog/deletepost/([0-9]+)', DeletePost),
+    ('/blog/([0-9]+)/deletecomment/([0-9]+)', DeleteComment),
+    ('/blog/([0-9]+)/editcomment/([0-9]+)', EditComment),
 ], debug=True)

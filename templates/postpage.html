@@ -11,22 +11,60 @@
             {% endif %}
         </div>
         <div class="col-md-5">
-            <a id="post-delete" class="btn btn-danger pull-right" href="/blog/{{post.user_id}}/deletepost/{{post.key().id()}}">Delete</a>
-            <a id="post-edit" class="btn btn-primary pull-right" href="/blog/{{post.user_id}}/editpost/{{post.key().id()}}">Edit</a>
+            <a id="post-delete" class="btn btn-danger pull-right" href="/blog/deletepost/{{post.key().id()}}">Delete</a>
+            <a id="post-edit" class="btn btn-primary pull-right" href="/blog/editpost/{{post.key().id()}}">Edit</a>
         </div>
 
-        <div class="row">
-        <div class="col-md-7">
-            <h3 class="post-heading">
-                <a class="post-title">{{post.subject}}</a>
-            </h3>
+        <div class="post col-md-12 wow fadeInRight"
+                     data-wow-duration="1000ms" data-wow-delay="300ms">
+        
+            <div class="row">
+                <div class="col-md-7">
+                    <h3 class="post-heading">
+                        <a href="/blog/{{post.key().id()}}" class="post-title">{{post.subject}}</a>
+                    </h3>
+                </div>
+            </div>
+
+            <small class="post-date">(Posted on {{post.created.strftime("%b %d, %Y")}} by <a href="/blog/profile/{{post.user_id}}">{{post.user_id}}</a>)</small>
+            
+            <p class="post-content">{{post.content|replace("\n", "<br>")|safe}}</p>
         </div>
+        
     </div>
 
-    <small class="post-date">(Posted on {{post.created.strftime("%b %d, %Y")}} by <a href="/blog/{{post.user_id}}">{{post.user_id}}</a>)</small>
-    
-    <p class="post-content">{{post.content|replace("\n", "<br>")|safe}}</p>
+    <div class="row">
+        <div class="sub-work col-md-12">
+            <form method="post" role="form">
+                <input type="hidden" class="form-control" id="like" name="like" value="update">
+                <button type="submit" class="btn btn-primary">Like {{noOfLikes}}</button>
+            </form>
+        </div>
+
+        <div class="sub-work col-md-12">
+            <form method="post" role="form" class="comment-form">
+                <div class="form-group">
+                    <label for="comment">Comment:</label>
+                    <input type="text" class="form-control" id="comment" name="comment" value="">
+                </div>
+                <button type="submit" class="btn btn-success">Submit</button>
+            </form>
+        </div>
+
+        <div class="sub-work col-md-12">
+            {% for c in comments %}
+            <blockquote>
+                <a class="comment-delete btn btn-danger pull-right" href="/blog/{{post.key().id()}}/deletecomment/{{c.key().id()}}">Delete</a>
+                <a class="comment-edit btn btn-primary pull-right" href="/blog/{{post.key().id()}}/editcomment/{{c.key().id()}}">Edit</a>
+                <p>{{ c.comment }}</p>
+                <footer>{{ c.user_id }}</footer>
+            </blockquote>
+            {% endfor %}
+        </div>
+
     </div>
+
+
 {% endblock %}
 
 

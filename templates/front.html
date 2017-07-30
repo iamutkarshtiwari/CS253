@@ -36,12 +36,12 @@
                         <div class="row">
                             <div class="col-md-7">
                                 <h3 class="post-heading">
-                                    <a href="/blog/{{p.user_id}}/{{p.key().id()}}" class="post-title">{{p.subject}}</a>
+                                    <a href="/blog/{{p.key().id()}}" class="post-title">{{p.subject}}</a>
                                 </h3>
                             </div>
                         </div>
 
-                        <small class="post-date">(Posted on {{p.created.strftime("%b %d, %Y")}} by <a href="/blog/{{p.user_id}}">{{p.user_id}}</a>)</small>
+                        <small class="post-date">(Posted on {{p.created.strftime("%b %d, %Y")}} by <a href="/blog/profile/{{p.user_id}}">{{p.user_id}}</a>)</small>
             
                         <p class="post-content">{{p.content|replace("\n", "<br>")|safe}}</p>
                     </div>
